@@ -7,45 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	"github.com/ross1116/swarmcdn/config"
 )
-
-type ChunkMeta struct {
-	FileName   string `json:"file_name"`
-	SHA256Hash string `json:"sha256_hash"`
-	Index      int    `json:"index"`
-}
-
-type Config struct {
-	ChunkSize int
-	ServerURL string
-}
 
 type DefaultChunker struct {
 	ChunkSize int
-}
-
-type DefaultUploader struct {
-	ServerURL string
-}
-
-type DefaultManifestManager struct{}
-
-type App struct {
-	Config   config.Config
-	Chunker  DefaultChunker
-	Uploader DefaultUploader
-	Manifest DefaultManifestManager
-}
-
-func NewApp(cfg config.Config) *App {
-	return &App{
-		Config:   cfg,
-		Chunker:  DefaultChunker{ChunkSize: cfg.ChunkSize},
-		Uploader: DefaultUploader{ServerURL: cfg.ServerURL},
-		Manifest: DefaultManifestManager{},
-	}
 }
 
 func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkMeta, error) {
@@ -95,6 +60,7 @@ func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkM
 			SHA256Hash: hashString,
 			Index:      index,
 		})
+
 		index++
 	}
 
