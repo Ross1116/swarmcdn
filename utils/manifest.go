@@ -3,13 +3,17 @@ package utils
 import (
 	"encoding/json"
 	"os"
+	"time"
 )
 
 type DefaultManifestManager struct{}
 
 type Manifest struct {
-	Filename string   `json:"filename"`
-	Chunks   []string `json:"chunks"`
+	FileID     string    `json:"file_id"`
+	Filename   string    `json:"filename"`
+	Version    int       `json:"version"`
+	Chunks     []string  `json:"chunks"`
+	UploadedAt time.Time `json:"uploaded_at"`
 }
 
 func (c *DefaultManifestManager) SaveManifest(manifest Manifest, outputPath string) error {

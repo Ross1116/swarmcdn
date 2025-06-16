@@ -5,8 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/ross1116/swarmcdn/utils"
 )
 
@@ -36,9 +39,37 @@ func MakeUploadHandler(app *utils.App) gin.HandlerFunc {
 
 		_ = os.Remove(tempPath)
 
+		chunkHashes := make([]string, len(chunks))
+		for i, chunk := range chunks {
+			chunkHashes[i] = chunk.SHA256Hash
+		}
+
+		fileID := uuid.New().String()
+		version := 1
+		manifest := utils.Manifest{
+			FileID:     fileID,
+			Version:    version,
+			Filename:   file.Filename,
+			Chunks:     chunkHashes,
+			UploadedAt: time.Now(),
+		}
+
+		manifestDir := filepath.Join("storage", "manifests", fileID)
+		_ = os.MkdirAll(manifestDir, os.ModePerm)
+		manifestPath := filepath.Join(manifestDir, fmt.Sprintf("v%d.json", version))
+		err = app.Manifest.SaveManifest(manifest, manifestPath)
+		if err != nil {
+			log.Println("Failed to save manifest", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write manifest"})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"message": fmt.Sprintf("'%s' uploaded and chunked!", file.Filename),
-			"chunks":  len(chunks),
+			"message":      fmt.Sprintf("'%s' uploaded and chunked!", file.Filename),
+			"chunks":       len(chunks),
+			"fileID":       fileID,
+			"version":      version,
+			"manifestPath": manifestPath,
 		})
 	}
 }

@@ -4,4 +4,4 @@ type DefaultUploader struct {
 	ServerURL string
 }
 
-// To be implemented: uploading chunks to peers or central tracker
+// TODO: uploading chunks to peers or central tracker
