@@ -13,7 +13,7 @@ import (
 	"github.com/ross1116/swarmcdn/utils"
 )
 
-func MakeUploadHandler(app *utils.App) gin.HandlerFunc {
+func UploadHandler(app *utils.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		file, err := c.FormFile("file")
 		if err != nil {
@@ -64,12 +64,29 @@ func MakeUploadHandler(app *utils.App) gin.HandlerFunc {
 			return
 		}
 
+		indexPath := "storage/index.json"
+		index, err := utils.LoadIndex(indexPath)
+		if err != nil {
+			log.Println("Failed to load index", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read index"})
+			return
+		}
+
+		index = utils.UpdateIndexEntry(index, manifest)
+
+		if err := utils.SaveIndex(indexPath, index); err != nil {
+			log.Println("Failed to write index:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update index"})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"message":      fmt.Sprintf("'%s' uploaded and chunked!", file.Filename),
 			"chunks":       len(chunks),
 			"fileID":       fileID,
 			"version":      version,
 			"manifestPath": manifestPath,
+			"indexPath":    indexPath,
 		})
 	}
 }

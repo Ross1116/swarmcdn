@@ -13,7 +13,7 @@ func main() {
 	app := utils.NewApp(*config.AppConfig)
 
 	router := gin.Default()
-	router.POST("/upload", handlers.MakeUploadHandler(app))
+	router.POST("/upload", handlers.UploadHandler(app))
 
 	router.Run(":8080")
 }
