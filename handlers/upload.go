@@ -29,6 +29,7 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the file"})
 			return
 		}
+		defer os.Remove(tempPath)
 
 		chunks, err := app.Chunker.ChunkFile(tempPath, "storage/chunks")
 		if err != nil {
@@ -36,8 +37,6 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Chunking failed"})
 			return
 		}
-
-		_ = os.Remove(tempPath)
 
 		chunkHashes := make([]string, len(chunks))
 		for i, chunk := range chunks {

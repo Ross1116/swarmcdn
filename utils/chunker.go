@@ -56,7 +56,7 @@ func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkM
 		}
 
 		chunks = append(chunks, ChunkMeta{
-			FileName:   chunkFileName,
+			Filename:   chunkFileName,
 			SHA256Hash: hashString,
 			Index:      index,
 		})

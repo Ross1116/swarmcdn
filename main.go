@@ -14,6 +14,8 @@ func main() {
 
 	router := gin.Default()
 	router.POST("/upload", handlers.UploadHandler(app))
+	router.GET("/chunks/:hash", handlers.GetChunkHandler)
+	router.GET("/manifest/:fileID", handlers.GetLatestManifestHandler)
 
 	router.Run(":8080")
 }

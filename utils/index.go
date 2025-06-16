@@ -9,7 +9,7 @@ import (
 
 type FileIndex struct {
 	FileID        string    `json:"file_id"`
-	FileName      string    `json:"filename"`
+	Filename      string    `json:"filename"`
 	LatestVersion int       `json:"latest_ver"`
 	AllVersions   []int     `json:"all_versions"`
 	UploadedAt    time.Time `json:"uploaded_at"`
@@ -54,7 +54,7 @@ func UpdateIndexEntry(index []FileIndex, manifest Manifest) []FileIndex {
 	// for new file
 	index = append(index, FileIndex{
 		FileID:        manifest.FileID,
-		FileName:      manifest.Filename,
+		Filename:      manifest.Filename,
 		LatestVersion: manifest.Version,
 		AllVersions:   []int{manifest.Version},
 		UploadedAt:    manifest.UploadedAt,
