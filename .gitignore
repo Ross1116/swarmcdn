@@ -1,0 +1,3 @@
+# Ignore all generated storage files
+storage/
+helloworld.txt

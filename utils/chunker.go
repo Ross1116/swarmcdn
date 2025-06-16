@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+
+	"github.com/ross1116/swarmcdn/config"
 )
 
 type ChunkMeta struct {
@@ -20,25 +23,45 @@ type Config struct {
 }
 
 type DefaultChunker struct {
-	chunkSize int
+	ChunkSize int
 }
 
 type DefaultUploader struct {
-	serverURL string
+	ServerURL string
 }
 
 type DefaultManifestManager struct{}
 
-func (c *DefaultChunker) ChunkFile(filepath string) ([]ChunkMeta, error) {
+type App struct {
+	Config   config.Config
+	Chunker  DefaultChunker
+	Uploader DefaultUploader
+	Manifest DefaultManifestManager
+}
+
+func NewApp(cfg config.Config) *App {
+	return &App{
+		Config:   cfg,
+		Chunker:  DefaultChunker{ChunkSize: cfg.ChunkSize},
+		Uploader: DefaultUploader{ServerURL: cfg.ServerURL},
+		Manifest: DefaultManifestManager{},
+	}
+}
+
+func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkMeta, error) {
 	var chunks []ChunkMeta
 
-	file, err := os.Open(filepath)
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	file, err := os.Open(inputPath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	buffer := make([]byte, c.chunkSize)
+	buffer := make([]byte, c.ChunkSize)
 	index := 0
 
 	for {
@@ -46,30 +69,33 @@ func (c *DefaultChunker) ChunkFile(filepath string) ([]ChunkMeta, error) {
 		if err != nil && err != io.EOF {
 			return nil, err
 		}
-
 		if bytesRead == 0 {
 			break
 		}
 
 		hash := sha256.Sum256(buffer[:bytesRead])
 		hashString := hex.EncodeToString(hash[:])
+		chunkFileName := fmt.Sprintf("%s.blob", hashString)
+		chunkFilePath := filepath.Join(outputDir, chunkFileName)
 
-		chunkFileName := fmt.Sprintf("%s.chunk.%d", filepath, index)
-		chunkFile, err := os.Create(chunkFileName)
-		if err != nil {
-			return nil, err
+		if _, err := os.Stat(chunkFilePath); os.IsNotExist(err) {
+			chunkFile, err := os.Create(chunkFilePath)
+			if err != nil {
+				return nil, err
+			}
+			_, err = chunkFile.Write(buffer[:bytesRead])
+			chunkFile.Close()
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		_, err = chunkFile.Write(buffer[:bytesRead])
-		if err != nil {
-			return nil, err
-		}
-
-		chunks = append(chunks, ChunkMeta{FileName: chunkFileName, SHA256Hash: hashString, Index: index})
-
-		chunkFile.Close()
-
-		index += 1
+		chunks = append(chunks, ChunkMeta{
+			FileName:   chunkFileName,
+			SHA256Hash: hashString,
+			Index:      index,
+		})
+		index++
 	}
 
 	return chunks, nil
