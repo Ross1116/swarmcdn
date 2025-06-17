@@ -3,3 +3,7 @@ storage/
 
 # Ignore all test files
 example_files/
+
+# Ignore all peer downloaded files
+peer/chunks/
+peer/downloads/
