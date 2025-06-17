@@ -8,7 +8,7 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	err := FetchManifest(reader)
+	err := fetchManifest(reader)
 	if err != nil {
 		log.Println("Manifest fetching failed with: ", err)
 		return

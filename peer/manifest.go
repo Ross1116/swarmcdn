@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func FetchManifest(reader *bufio.Reader) error {
+func fetchManifest(reader *bufio.Reader) error {
 	fmt.Println("Enter File ID:")
 	fileID, err := reader.ReadString('\n')
 	if err != nil {
