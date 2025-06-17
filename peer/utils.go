@@ -1,4 +1,4 @@
-package peer
+package main
 
 type Manifest struct {
 	FileID     string   `json:"file_id"`
