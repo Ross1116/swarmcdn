@@ -7,7 +7,8 @@ example_files/
 # Ignore all peer downloaded files
 peer/client/chunks/
 peer/client/downloads/
+peer/client/manifests/
 peer/client/peers.json
 
 # Ignore built binaries
-/bin/
+bin/

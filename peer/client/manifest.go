@@ -19,9 +19,11 @@ func fetchManifest(reader *bufio.Reader) error {
 		return err
 	}
 	fileID = strings.TrimSpace(fileID)
-	manifestFilePath := GetManifestPath(fileID)
 
-	resp, err := http.Get(fmt.Sprintf("%s/manifest/%s", serverURL, fileID))
+	manifestFilePath := GetManifestPath(fileID)
+	url := fmt.Sprintf("%s/manifest/%s", serverURL, fileID)
+
+	resp, err := http.Get(url)
 	if err != nil {
 		log.Println("Error sending request:", err)
 		return err
@@ -30,30 +32,22 @@ func fetchManifest(reader *bufio.Reader) error {
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Failed to fetch manifest. Status: %s\n", resp.Status)
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Println("Error reading the response: ", err)
-			return err
-		}
-
+		body, _ := io.ReadAll(resp.Body)
 		fmt.Println(string(body))
-		return err
+		return fmt.Errorf("failed to fetch manifest: %s", resp.Status)
 	}
 
 	manifestData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error reading the response: ", err)
+		log.Println("Error reading response:", err)
 		return err
 	}
 
-	manifestFile, err := os.Create(manifestFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to create manifest file: %v", err)
+	if err := os.MkdirAll(ManifestsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create manifest directory: %v", err)
 	}
-	defer manifestFile.Close()
 
-	_, err = manifestFile.Write(manifestData)
-	if err != nil {
+	if err := os.WriteFile(manifestFilePath, manifestData, 0644); err != nil {
 		return fmt.Errorf("failed to write manifest file: %v", err)
 	}
 	log.Printf("Manifest saved to %s\n", manifestFilePath)
@@ -69,11 +63,10 @@ func fetchManifest(reader *bufio.Reader) error {
 		return err
 	}
 
-	if err := os.MkdirAll("downloads", 0755); err != nil {
+	if err := os.MkdirAll(DownloadsDir, 0755); err != nil {
 		return fmt.Errorf("failed to create downloads directory: %v", err)
 	}
-	err = reconstructFile(manifest, "downloads")
-	if err != nil {
+	if err := reconstructFile(manifest, DownloadsDir); err != nil {
 		return err
 	}
 
