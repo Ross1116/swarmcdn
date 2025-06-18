@@ -7,9 +7,9 @@ import (
 const (
 	BaseDir      = "peer/client"
 	ChunksDir    = BaseDir + "/chunks"
-	DownloadsDir = BaseDir + "/downloads"
+	DownloadsDir = "peer/client/downloads"
 	ManifestsDir = BaseDir + "/manifests"
-	peersFile    = BaseDir + "/peers.json"
+	PeersFile    = BaseDir + "/peers.json"
 )
 
 func GetChunkPath(hash string) string {
@@ -22,8 +22,4 @@ func GetManifestPath(fileID string) string {
 
 func GetDownloadPath(filename string) string {
 	return filepath.Join(DownloadsDir, filename)
-}
-
-func GetPeersFilePath() string {
-	return peersFile
 }

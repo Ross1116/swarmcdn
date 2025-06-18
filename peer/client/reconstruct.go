@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func reconstructFile(manifest Manifest, outputFilePath string) error {
-	outputFile, err := os.Create(fmt.Sprintf("%s/%s", outputFilePath, manifest.Filename))
+	outputFile, err := os.Create(
+		filepath.Join(outputFilePath, filepath.Base(manifest.Filename)),
+	)
 	if err != nil {
 		return err
 	}
@@ -27,6 +30,6 @@ func reconstructFile(manifest Manifest, outputFilePath string) error {
 		}
 	}
 
-	log.Printf("File reconstructed successfully at %s\n", outputFilePath)
+	log.Printf("File reconstructed successfully at %s/%s\n", outputFilePath, manifest.Filename)
 	return nil
 }

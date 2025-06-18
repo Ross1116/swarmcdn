@@ -13,7 +13,7 @@ import (
 )
 
 func loadPeerList() []string {
-	file := GetPeersFilePath()
+	file := PeersFile
 	data, err := os.ReadFile(file)
 	if err != nil {
 		log.Printf("Could not read peers.json: %v", err)
