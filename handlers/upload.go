@@ -22,8 +22,7 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			return
 		}
 
-		tempPath := "storage/original/" + file.Filename
-
+		tempPath := utils.GetOriginalPath(file.Filename)
 		if err := c.SaveUploadedFile(file, tempPath); err != nil {
 			log.Println("Failed to save file:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the file"})
@@ -31,7 +30,7 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 		}
 		defer os.Remove(tempPath)
 
-		chunks, err := app.Chunker.ChunkFile(tempPath, "storage/chunks")
+		chunks, err := app.Chunker.ChunkFile(tempPath, utils.ChunksDir)
 		if err != nil {
 			log.Println("Failed to chunk file:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Chunking failed"})
@@ -53,17 +52,20 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			UploadedAt: time.Now(),
 		}
 
-		manifestDir := filepath.Join("storage", "manifests", fileID)
-		_ = os.MkdirAll(manifestDir, os.ModePerm)
-		manifestPath := filepath.Join(manifestDir, fmt.Sprintf("v%d.json", version))
-		err = app.Manifest.SaveManifest(manifest, manifestPath)
-		if err != nil {
+		manifestPath := utils.GetManifestPath(fileID, version)
+		if err := os.MkdirAll(filepath.Dir(manifestPath), os.ModePerm); err != nil {
+			log.Println("Failed to create manifest directory:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to prepare manifest directory"})
+			return
+		}
+
+		if err := app.Manifest.SaveManifest(manifest, manifestPath); err != nil {
 			log.Println("Failed to save manifest", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write manifest"})
 			return
 		}
 
-		indexPath := "storage/index.json"
+		indexPath := utils.GetIndexFilePath()
 		index, err := utils.LoadIndex(indexPath)
 		if err != nil {
 			log.Println("Failed to load index", err)

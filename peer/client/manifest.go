@@ -19,7 +19,7 @@ func fetchManifest(reader *bufio.Reader) error {
 		return err
 	}
 	fileID = strings.TrimSpace(fileID)
-	manifestFilePath := fmt.Sprintf("chunks/%s.json", fileID)
+	manifestFilePath := GetManifestPath(fileID)
 
 	resp, err := http.Get(fmt.Sprintf("%s/manifest/%s", serverURL, fileID))
 	if err != nil {

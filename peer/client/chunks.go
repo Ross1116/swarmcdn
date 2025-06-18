@@ -13,7 +13,7 @@ import (
 )
 
 func loadPeerList() []string {
-	file := "storage/peers.json"
+	file := GetPeersFilePath()
 	data, err := os.ReadFile(file)
 	if err != nil {
 		log.Printf("Could not read peers.json: %v", err)
@@ -29,7 +29,7 @@ func loadPeerList() []string {
 }
 
 func fetchChunk(hash string) error {
-	chunkFilePath := fmt.Sprintf("chunks/%s.blob", hash)
+	chunkFilePath := GetChunkPath(hash)
 
 	if data, err := os.ReadFile(chunkFilePath); err == nil {
 		sum := sha256.Sum256(data)
@@ -77,7 +77,6 @@ func fetchChunk(hash string) error {
 				continue
 			}
 
-			// Write valid chunk to file
 			err = os.WriteFile(chunkFilePath, chunkData, 0644)
 			if err != nil {
 				return fmt.Errorf("failed to write chunk %s: %v", hash, err)

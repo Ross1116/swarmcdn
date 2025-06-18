@@ -14,7 +14,7 @@ func reconstructFile(manifest Manifest, outputFilePath string) error {
 	defer outputFile.Close()
 
 	for _, hash := range manifest.Chunks {
-		chunkPath := fmt.Sprintf("chunks/%s.blob", hash)
+		chunkPath := GetChunkPath(hash)
 
 		chunkData, err := os.ReadFile(chunkPath)
 		if err != nil {

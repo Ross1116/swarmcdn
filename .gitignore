@@ -5,5 +5,9 @@ storage/
 example_files/
 
 # Ignore all peer downloaded files
-peer/chunks/
-peer/downloads/
+peer/client/chunks/
+peer/client/downloads/
+peer/client/peers.json
+
+# Ignore built binaries
+/bin/
