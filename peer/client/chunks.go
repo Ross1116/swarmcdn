@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -11,22 +10,6 @@ import (
 	"os"
 	"sync"
 )
-
-func loadPeerList() []string {
-	file := PeersFile
-	data, err := os.ReadFile(file)
-	if err != nil {
-		log.Printf("Could not read peers.json: %v", err)
-		return nil
-	}
-
-	var peers []string
-	if err := json.Unmarshal(data, &peers); err != nil {
-		log.Printf("Invalid peers.json format: %v", err)
-		return nil
-	}
-	return peers
-}
 
 func fetchChunk(hash string) error {
 	chunkFilePath := GetChunkPath(hash)
@@ -57,11 +40,11 @@ func fetchChunk(hash string) error {
 				log.Printf("Error contacting %s: %v", peer, err)
 				continue
 			}
-			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				log.Printf("Failed from %s: %s\n%s", peer, resp.Status, string(body))
+				resp.Body.Close()
 				continue
 			}
 
@@ -70,6 +53,7 @@ func fetchChunk(hash string) error {
 				log.Printf("Error reading response from %s: %v", peer, err)
 				continue
 			}
+			resp.Body.Close()
 
 			sum := sha256.Sum256(chunkData)
 			if hex.EncodeToString(sum[:]) != hash {
