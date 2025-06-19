@@ -43,6 +43,7 @@ func AddKnownPeer(c *gin.Context) {
 	content, err := os.ReadFile(peerFilePath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read peer file"})
+		return
 	}
 
 	var peers []string

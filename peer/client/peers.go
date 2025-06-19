@@ -91,5 +91,9 @@ func registerPeer(serverURL, myPeerURL string) error {
 	}
 
 	log.Printf("Successfully register peer: %s", string(body))
+	err = updatePeerList(serverURL, PeersFile)
+	if err != nil {
+		return fmt.Errorf("Warning: Peer registered but failed to update peer list: %v", err")
+	}
 	return err
 }

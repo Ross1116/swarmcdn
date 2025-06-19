@@ -17,5 +17,8 @@ func main() {
 	router.GET("/chunks/:hash", handlers.GetChunkHandler)
 	router.GET("/manifest/:fileID", handlers.GetLatestManifestHandler)
 
+	router.GET("/peers", handlers.GetKnownPeers)
+	router.POST("/peers/register", handlers.AddKnownPeer)
+
 	router.Run(":8080")
 }
