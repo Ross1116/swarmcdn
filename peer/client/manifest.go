@@ -60,8 +60,9 @@ func fetchManifest(reader *bufio.Reader) error {
 
 	if err := downloadChunksParallel(manifest.Chunks); err != nil {
 		log.Println("One or more chunks failed to download.")
-		return err
+		return fmt.Errorf("could not download all chunks: %w", err)
 	}
+	log.Println("All chunks downloaded successfully.")
 
 	if err := os.MkdirAll(DownloadsDir, 0755); err != nil {
 		return fmt.Errorf("failed to create downloads directory: %v", err)

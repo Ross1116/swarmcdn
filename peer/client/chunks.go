@@ -78,6 +78,7 @@ func downloadChunksParallel(chunkHashes []string) error {
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, maxConcurrentDownloads)
 	errChan := make(chan error, len(chunkHashes))
+
 	for _, hash := range chunkHashes {
 		wg.Add(1)
 
@@ -93,11 +94,18 @@ func downloadChunksParallel(chunkHashes []string) error {
 		}(hash)
 	}
 
-	wg.Wait()
-	close(errChan)
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
 
-	if len(errChan) > 0 {
-		for err := range errChan {
+	var errors []error
+	for err := range errChan {
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		for _, err := range errors {
 			log.Println("Error during chunk download:", err)
 		}
 		return fmt.Errorf("some chunks failed to download")
