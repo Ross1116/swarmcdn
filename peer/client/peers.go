@@ -11,36 +11,42 @@ import (
 	"strings"
 )
 
+// loadPeerList loads peers from peers.json and ensures the central server is included as fallback.
 func loadPeerList() []string {
-	file := PeersFile
-	data, err := os.ReadFile(file)
+	data, err := os.ReadFile(PeersFile)
 	if err != nil {
 		log.Printf("Could not read peers.json: %v", err)
-		return nil
+		return []string{strings.TrimRight(serverURL, "/")}
 	}
 
 	var peers []string
 	if err := json.Unmarshal(data, &peers); err != nil {
 		log.Printf("Invalid peers.json format: %v", err)
-		return nil
+		return []string{strings.TrimRight(serverURL, "/")}
 	}
 
-	unique := make(map[string]bool)
+	server := strings.TrimRight(serverURL, "/")
+	seen := make(map[string]bool)
 	var uniquePeers []string
+
 	for _, peer := range peers {
-		peer = strings.TrimSpace(peer)
-		peer = strings.TrimRight(peer, "/")
-		if peer == "" || unique[peer] {
+		peer = strings.TrimSpace(strings.TrimRight(peer, "/"))
+		if peer == "" || seen[peer] {
 			continue
 		}
-		unique[peer] = true
+		seen[peer] = true
 		uniquePeers = append(uniquePeers, peer)
+	}
+
+	if !seen[server] {
+		uniquePeers = append(uniquePeers, server)
 	}
 
 	return uniquePeers
 }
 
-func updatePeerList(serverURL, peersFilePath string) error {
+// updatePeerList fetches updated peer list from the central server and writes it to peers.json.
+func updatePeerList() error {
 	resp, err := http.Get(fmt.Sprintf("%s/peers", serverURL))
 	if err != nil {
 		return fmt.Errorf("failed to fetch peers: %v", err)
@@ -57,43 +63,45 @@ func updatePeerList(serverURL, peersFilePath string) error {
 		return fmt.Errorf("failed to read peers response: %v", err)
 	}
 
-	if err := os.WriteFile(peersFilePath, content, 0644); err != nil {
-		return fmt.Errorf("failed to update peers file: %v", err)
+	if err := os.WriteFile(PeersFile, content, 0644); err != nil {
+		return fmt.Errorf("failed to write peers.json: %v", err)
 	}
 
-	return err
+	return nil
 }
 
-func registerPeer(serverURL, myPeerURL string) error {
+func registerPeer(myPeerURL string) error {
 	payload := map[string]string{"url": myPeerURL}
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal url JSON %v:", err)
+		return fmt.Errorf("failed to marshal peer registration payload: %v", err)
 	}
 
-	resp, err := http.Post(fmt.Sprintf("%s/peers/register", serverURL),
+	resp, err := http.Post(
+		fmt.Sprintf("%s/peers/register", serverURL),
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to send POST request: %v", err)
+		return fmt.Errorf("failed to send registration request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response data: %v", err)
+		return fmt.Errorf("failed to read registration response: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("server returned error: %s - %s", resp.Status, string(body))
+		return fmt.Errorf("registration failed: %s - %s", resp.Status, string(body))
 	}
 
-	log.Printf("Successfully register peer: %s", string(body))
-	err = updatePeerList(serverURL, PeersFile)
-	if err != nil {
-		return fmt.Errorf("Warning: Peer registered but failed to update peer list: %v", err)
+	log.Printf("Successfully registered peer: %s", string(body))
+
+	if err := updatePeerList(); err != nil {
+		return fmt.Errorf("peer registered but failed to update peer list: %v", err)
 	}
-	return err
+
+	return nil
 }

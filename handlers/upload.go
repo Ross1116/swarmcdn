@@ -37,9 +37,14 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			return
 		}
 
-		chunkHashes := make([]string, len(chunks))
-		for i, chunk := range chunks {
-			chunkHashes[i] = chunk.SHA256Hash
+		chunkHashes := make([]string, 0, len(chunks))
+		seen := make(map[string]bool)
+
+		for _, chunk := range chunks {
+			if !seen[chunk.SHA256Hash] {
+				chunkHashes = append(chunkHashes, chunk.SHA256Hash)
+				seen[chunk.SHA256Hash] = true
+			}
 		}
 
 		fileID := uuid.New().String()
@@ -83,7 +88,7 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":      fmt.Sprintf("'%s' uploaded and chunked!", file.Filename),
-			"chunks":       len(chunks),
+			"chunks":       len(chunkHashes),
 			"fileID":       fileID,
 			"version":      version,
 			"manifestPath": manifestPath,

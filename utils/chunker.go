@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -38,19 +39,18 @@ func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkM
 			break
 		}
 
-		hash := sha256.Sum256(buffer[:bytesRead])
+		chunkData := make([]byte, bytesRead)
+		copy(chunkData, buffer[:bytesRead])
+
+		hash := sha256.Sum256(chunkData)
 		hashString := hex.EncodeToString(hash[:])
 		chunkFileName := fmt.Sprintf("%s.blob", hashString)
 		chunkFilePath := filepath.Join(outputDir, chunkFileName)
 
+		log.Printf("Chunk %d: size=%d, hash=%s", index, bytesRead, hashString)
+
 		if _, err := os.Stat(chunkFilePath); os.IsNotExist(err) {
-			chunkFile, err := os.Create(chunkFilePath)
-			if err != nil {
-				return nil, err
-			}
-			_, err = chunkFile.Write(buffer[:bytesRead])
-			chunkFile.Close()
-			if err != nil {
+			if err := os.WriteFile(chunkFilePath, chunkData, 0644); err != nil {
 				return nil, err
 			}
 		}
@@ -60,7 +60,6 @@ func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkM
 			SHA256Hash: hashString,
 			Index:      index,
 		})
-
 		index++
 	}
 

@@ -36,7 +36,7 @@ build-main: $(MAIN_SERVER)
 
 build-client: $(PEER_CLIENT)
 
-build-server: $(PEER_SERVER)
+# build-server: $(PEER_SERVER)
 
 # Run targets
 .PHONY: run-main run-client run-server
@@ -49,9 +49,9 @@ run-client: build-client
 	@echo "Running peer client..."
 	$(PEER_CLIENT)
 
-run-server: build-server
-	@echo "Running peer server..."
-	$(PEER_SERVER)
+# run-server: build-server
+# 	@echo "Running peer server..."
+# 	$(PEER_SERVER)
 
 # Clean binaries
 .PHONY: clean
@@ -73,4 +73,4 @@ build-all:
 	@mkdir -p $(BIN_DIR)
 	go build -o $(MAIN_SERVER) .
 	go build -o $(PEER_CLIENT) ./peer/client
-	go build -o $(PEER_SERVER) ./peer/server
+	# go build -o $(PEER_SERVER) ./peer/server
