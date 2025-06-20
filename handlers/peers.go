@@ -61,16 +61,11 @@ func AddKnownPeer(c *gin.Context) {
 	}
 
 	peers = append(peers, request.URL)
-	updatedContent, err := json.MarshalIndent(peers, "", " ")
+	err = utils.SavePeers(peers)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to marshall the url data"})
-		return
-	}
-	if err = os.WriteFile(peerFilePath, updatedContent, 0644); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update peer file"})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "Peer registered successfully"})
 
 }
