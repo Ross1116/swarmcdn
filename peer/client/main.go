@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	InitDirectories()
 	reader := bufio.NewReader(os.Stdin)
 
 	conn, err := net.Dial("udp", "8.8.8.8:80")
