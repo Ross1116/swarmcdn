@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ross1116/swarmcdn/config"
 	"github.com/ross1116/swarmcdn/handlers"
@@ -20,5 +22,9 @@ func main() {
 	router.GET("/peers", handlers.GetKnownPeers)
 	router.POST("/peers/register", handlers.AddKnownPeer)
 
-	router.Run(":8080")
+	go utils.CheckHealthPeriodic()
+
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
 }

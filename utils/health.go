@@ -10,7 +10,7 @@ import (
 
 const (
 	HealthPath      = "/health"
-	CheckInterval   = 10 * time.Second
+	CheckInterval   = 100 * time.Second
 	TimeoutInterval = 3 * time.Second
 )
 
@@ -41,11 +41,10 @@ func CheckHealth(baseURL string) {
 		return
 	}
 
-	fmt.Printf("Health check performed successfully for %s", baseURL)
+	fmt.Printf("Health check performed successfully for %s\n", baseURL)
 }
 
 func CheckHealthPeriodic() {
-
 	ticker := time.NewTicker(CheckInterval)
 	defer ticker.Stop()
 

@@ -12,13 +12,13 @@ func LoadPeerList() ([]string, error) {
 	file := GetPeersFilePath()
 	data, err := os.ReadFile(file)
 	if err != nil {
-		log.Printf("Could not read peers.json: %v", err)
+		log.Printf("Could not read peers.json: %v\n", err)
 		return nil, err
 	}
 
 	var peers []string
 	if err := json.Unmarshal(data, &peers); err != nil {
-		log.Printf("Invalid peers.json format: %v", err)
+		log.Printf("Invalid peers.json format: %v\n", err)
 		return nil, err
 	}
 

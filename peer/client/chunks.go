@@ -25,13 +25,20 @@ func fetchChunk(hash string) error {
 	}
 
 	peers := loadPeerList()
-	peers = append(peers, serverURL)
+	filteredPeers := make([]string, 0, len(peers))
+	for _, peer := range peers {
+		if peerURL == peer {
+			continue
+		}
+		filteredPeers = append(filteredPeers, peer)
+	}
+	filteredPeers = append(filteredPeers, serverURL)
 
 	const maxRetries = 5
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		log.Printf("Attempt %d to download chunk %s...", attempt, hash)
 
-		for _, peer := range peers {
+		for _, peer := range filteredPeers {
 			url := fmt.Sprintf("%s/chunks/%s", peer, hash)
 			log.Printf("Trying %s", url)
 
@@ -49,11 +56,11 @@ func fetchChunk(hash string) error {
 			}
 
 			chunkData, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
 			if err != nil {
 				log.Printf("Error reading response from %s: %v", peer, err)
 				continue
 			}
-			resp.Body.Close()
 
 			sum := sha256.Sum256(chunkData)
 			if hex.EncodeToString(sum[:]) != hash {
