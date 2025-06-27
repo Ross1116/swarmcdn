@@ -25,18 +25,37 @@ func GetChunkHandler(c *gin.Context) {
 	c.File(path)
 }
 
-func RedistributeChunks(chunkHashes []string, peerURLS []string) error {
-	if len(peerURLS) == 0 {
+func RedistributeChunks(chunkHashes []string, peerURLs []string) error {
+	if len(peerURLs) == 0 {
 		return fmt.Errorf("no peers available")
 	}
 
+	numPeers := len(peerURLs)
+
 	for i, hash := range chunkHashes {
-		peerURL := peerURLS[i%len(peerURLS)]
 		chunkPath := utils.GetChunkPath(hash)
 
-		if err := UploadChunkToPeer(chunkPath, peerURL); err != nil {
-			log.Printf("Failed to upload the chunk %s to peer %s: %v", hash, peerURL, err)
-			return err
+		startIndex := i % numPeers
+		success := false
+
+		for attempt := range numPeers {
+			peerIndex := (startIndex + attempt) % numPeers
+			peerURL := peerURLs[peerIndex]
+
+			err := UploadChunkToPeer(chunkPath, peerURL)
+			if err != nil {
+				log.Printf("Failed to upload chunk %s to peer %s: %v", hash, peerURL, err)
+				continue
+			}
+
+			log.Printf("Successfully uploaded chunk %s to peer %s", hash, peerURL)
+			success = true
+			break
+		}
+
+		if !success {
+			log.Printf("Failed to upload chunk %s to any peer", hash)
+			return fmt.Errorf("failed to upload chunk %s to any peer", hash)
 		}
 	}
 
