@@ -8,6 +8,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ross1116/swarmcdn/utils"
@@ -69,32 +71,32 @@ func UploadChunkToPeer(chunkPath string, peerURL string) error {
 	}
 	defer file.Close()
 
+	hash := filepath.Base(chunkPath)
+	hash = strings.TrimSuffix(hash, ".blob")
+
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
-	part, err := writer.CreateFormFile("file", file.Name())
+	part, err := writer.CreateFormFile("chunk", hash+".blob")
 	if err != nil {
 		return fmt.Errorf("failed to create form file: %v", err)
 	}
-
-	_, err = io.Copy(part, file)
-	if err != nil {
+	if _, err = io.Copy(part, file); err != nil {
 		return fmt.Errorf("failed to copy file data: %v", err)
 	}
 
-	err = writer.Close()
-	if err != nil {
+	if err := writer.WriteField("hash", hash); err != nil {
+		return fmt.Errorf("failed to write hash field: %v", err)
+	}
+
+	if err = writer.Close(); err != nil {
 		return fmt.Errorf("failed to close writer: %v", err)
 	}
 
 	uploadEndpoint := peerURL + "/upload_chunk"
-	resp, err := http.Post(
-		uploadEndpoint,
-		writer.FormDataContentType(),
-		&requestBody,
-	)
+	resp, err := http.Post(uploadEndpoint, writer.FormDataContentType(), &requestBody)
 	if err != nil {
-		return fmt.Errorf("Unable to post the file to the peer %s: %v", peerURL, err)
+		return fmt.Errorf("unable to post the file to peer %s: %v", peerURL, err)
 	}
 	defer resp.Body.Close()
 
@@ -103,6 +105,6 @@ func UploadChunkToPeer(chunkPath string, peerURL string) error {
 		return fmt.Errorf("upload failed: %s\n%s", resp.Status, string(body))
 	}
 
-	fmt.Println("File uploaded successfully")
+	log.Printf("Chunk %s uploaded successfully to %s", hash, peerURL)
 	return nil
 }

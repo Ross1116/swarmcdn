@@ -10,7 +10,7 @@ import (
 	"github.com/ross1116/swarmcdn/utils"
 )
 
-const ChunksDir = "client/chunks"
+const ChunksDir = "peer/client/chunks"
 
 func ServeChunks(port string) {
 	router := gin.Default()
