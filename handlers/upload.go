@@ -86,6 +86,18 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			return
 		}
 
+		peerList, err := utils.LoadPeerList()
+		if err != nil {
+			log.Println("Unable to load the peer list", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read peers file"})
+			return
+		}
+		go func() {
+			if err = RedistributeChunks(chunkHashes, peerList); err != nil {
+				log.Println("Unable to redistribute the chunks to peers: ", err)
+			}
+		}()
+
 		c.JSON(http.StatusOK, gin.H{
 			"message":      fmt.Sprintf("'%s' uploaded and chunked!", file.Filename),
 			"chunks":       len(chunkHashes),

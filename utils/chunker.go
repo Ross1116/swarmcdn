@@ -45,14 +45,11 @@ func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkM
 		hash := sha256.Sum256(chunkData)
 		hashString := hex.EncodeToString(hash[:])
 		chunkFileName := fmt.Sprintf("%s.blob", hashString)
-		chunkFilePath := filepath.Join(outputDir, chunkFileName)
 
 		log.Printf("Chunk %d: size=%d, hash=%s", index, bytesRead, hashString)
 
-		if _, err := os.Stat(chunkFilePath); os.IsNotExist(err) {
-			if err := os.WriteFile(chunkFilePath, chunkData, 0644); err != nil {
-				return nil, err
-			}
+		if _, err := SaveChunkIfValid(chunkData, hashString, outputDir); err != nil {
+			return nil, err
 		}
 
 		chunks = append(chunks, ChunkMeta{
@@ -64,4 +61,27 @@ func (c *DefaultChunker) ChunkFile(inputPath string, outputDir string) ([]ChunkM
 	}
 
 	return chunks, nil
+}
+
+func SaveChunkIfValid(data []byte, expectedHash string, outputDir string) (string, error) {
+	hash := sha256.Sum256(data)
+	hashString := hex.EncodeToString(hash[:])
+
+	if hashString != expectedHash {
+		return "", fmt.Errorf("hash mismatch: expected %s, got %s", expectedHash, hashString)
+	}
+
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	chunkPath := filepath.Join(outputDir, hashString+".blob")
+
+	if _, err := os.Stat(chunkPath); os.IsNotExist(err) {
+		if err := os.WriteFile(chunkPath, data, 0644); err != nil {
+			return "", fmt.Errorf("failed to write chunk file: %w", err)
+		}
+	}
+
+	return chunkPath, nil
 }
