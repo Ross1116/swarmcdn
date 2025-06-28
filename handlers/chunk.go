@@ -51,6 +51,12 @@ func RedistributeChunks(chunkHashes []string, peerURLs []string) error {
 			}
 
 			log.Printf("Successfully uploaded chunk %s to peer %s", hash, peerURL)
+
+			err = utils.UpdateTrackerEntry(utils.TrackersDir, hash, peerURL)
+			if err != nil {
+				log.Printf("Warning: failed to update tracker for chunk %s: %v", hash, err)
+			}
+
 			success = true
 			break
 		}

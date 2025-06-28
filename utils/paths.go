@@ -10,6 +10,7 @@ const (
 	OriginalDir  = StorageDir + "/original"
 	ChunksDir    = StorageDir + "/chunks"
 	ManifestsDir = StorageDir + "/manifests"
+	TrackersDir  = StorageDir + "/trackers"
 	indexFile    = StorageDir + "/index.json"
 	peersFile    = StorageDir + "/peers.json"
 )
