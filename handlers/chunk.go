@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -58,6 +59,9 @@ func RedistributeChunks(chunkHashes []string, peerURLs []string) error {
 			}
 
 			success = true
+
+			go ReplicateChunkToPeers(hash, chunkPath, peerURL, peerURLs, utils.ReplicationFactor)
+
 			break
 		}
 
@@ -112,5 +116,61 @@ func UploadChunkToPeer(chunkPath string, peerURL string) error {
 	}
 
 	log.Printf("Chunk %s uploaded successfully to %s", hash, peerURL)
+	return nil
+}
+
+func ReplicateChunkToPeers(chunkHash, chunkPath, primaryPeer string, peerList []string, replicas int) error {
+	tracker, err := utils.LoadTrackerFile(filepath.Join(utils.TrackersDir, chunkHash+".json"))
+	if err != nil {
+		log.Printf("Failed to load tracker for replication: %v", err)
+		return err
+	}
+
+	current := make(map[string]bool)
+	for _, p := range tracker.Peers {
+		current[p] = true
+	}
+	current[primaryPeer] = true
+
+	var valid []string
+	for _, p := range peerList {
+		if !current[p] {
+			valid = append(valid, p)
+		}
+	}
+
+	replicasNeeded := replicas - 1
+	total := len(valid)
+	var selected []string
+
+	if replicasNeeded >= total {
+		selected = valid
+	} else {
+		indexMap := make(map[int]struct{})
+
+		for len(indexMap) < replicasNeeded {
+			i := rand.Intn(total)
+			indexMap[i] = struct{}{}
+		}
+
+		for i := range indexMap {
+			selected = append(selected, valid[i])
+		}
+	}
+
+	for _, peer := range selected {
+		err := UploadChunkToPeer(chunkPath, peer)
+		if err != nil {
+			log.Printf("Replication failed for chunk %s to peer %s: %v", chunkHash, peer, err)
+			continue
+		}
+
+		err = utils.UpdateTrackerEntry(utils.TrackersDir, chunkHash, peer)
+		if err != nil {
+			log.Printf("Failed to update tracker after replication: %v", err)
+		} else {
+			log.Printf("Replicated chunk %s to peer %s", chunkHash, peer)
+		}
+	}
 	return nil
 }

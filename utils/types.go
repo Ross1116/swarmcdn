@@ -5,3 +5,5 @@ type ChunkMeta struct {
 	SHA256Hash string `json:"sha256_hash"`
 	Index      int    `json:"index"`
 }
+
+const ReplicationFactor = 3
