@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/ross1116/swarmcdn/utils"
 )
 
@@ -61,7 +62,8 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			return
 		}
 
-		fileID := uuid.New().String()
+		fileHash := sha256.Sum256([]byte(username + "/" + file.Filename))
+		fileID := hex.EncodeToString(fileHash[:])
 		manifest := utils.Manifest{
 			FileID:     fileID,
 			Version:    version,
@@ -91,7 +93,7 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			return
 		}
 
-		index = utils.UpdateIndexEntry(index, manifest)
+		index = utils.UpdateIndexEntry(index, username, manifest)
 
 		if err := utils.SaveIndex(indexPath, index); err != nil {
 			log.Println("Failed to write index:", err)

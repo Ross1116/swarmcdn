@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"os"
 	"slices"
+	"sort"
 	"time"
 )
 
 type FileIndex struct {
 	FileID        string    `json:"file_id"`
+	Username      string    `json:"username"`
 	Filename      string    `json:"filename"`
 	LatestVersion int       `json:"latest_ver"`
 	AllVersions   []int     `json:"all_versions"`
@@ -40,11 +42,12 @@ func LoadIndex(inputPath string) ([]FileIndex, error) {
 	return index, err
 }
 
-func UpdateIndexEntry(index []FileIndex, manifest Manifest) []FileIndex {
+func UpdateIndexEntry(index []FileIndex, username string, manifest Manifest) []FileIndex {
 	for i, entry := range index {
 		if entry.FileID == manifest.FileID {
 			entry.LatestVersion = manifest.Version
 			entry.AllVersions = appendIfMissing(entry.AllVersions, manifest.Version)
+			sort.Ints(entry.AllVersions)
 			entry.UploadedAt = manifest.UploadedAt
 			index[i] = entry
 			return index
@@ -54,6 +57,7 @@ func UpdateIndexEntry(index []FileIndex, manifest Manifest) []FileIndex {
 	// for new file
 	index = append(index, FileIndex{
 		FileID:        manifest.FileID,
+		Username:      username,
 		Filename:      manifest.Filename,
 		LatestVersion: manifest.Version,
 		AllVersions:   []int{manifest.Version},
