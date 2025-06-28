@@ -11,7 +11,7 @@ SwarmCDN is a lightweight peer-to-peer content delivery network written in Go. I
 - **Health Monitoring:** Dead peers are periodically detected and removed from the network automatically.
 - **Central Coordinator (Server):** Handles uploads, manifest tracking, peer management, and redistribution.
 
-## 📂 Folder Structure
+## Folder Structure
 
     .
     ├── storage/
@@ -26,7 +26,7 @@ SwarmCDN is a lightweight peer-to-peer content delivery network written in Go. I
     ├── utils/                 # Tracker logic, health checks, peer mgmt
     └── example_files/         # Demo files for upload
 
-## 🔧 Server (Control Plane)
+## Server (Control Plane)
 
     go run main.go
 
@@ -38,7 +38,7 @@ Handles:
 - Upload redistribution
 - Peer health monitoring
 
-## 💻 Peer Client
+## Peer Client
 
     make run-client
 
@@ -50,7 +50,7 @@ Capabilities:
 - Runs an HTTP server for sharing chunks
 - Deduplicates chunks already present
 
-## 🧾 Manifest Format
+## Manifest Format
 
     {
       "file_id": "uuid",
@@ -60,7 +60,7 @@ Capabilities:
       "uploaded_at": "2025-06-27T14:05:10+05:30"
     }
 
-## 🛣 Roadmap
+## Roadmap
 
 - [ ] Index manifest entries per user (for file listing/history)
 - [ ] Optimize chunk downloads with retries + goroutines
@@ -69,12 +69,3 @@ Capabilities:
 - [ ] Static file serving support (e.g., React apps)
 - [ ] Add a web dashboard
 - [ ] Add in-browser (WASM) peer support
-
-## 🧠 Philosophy
-
-SwarmCDN treats files as versioned sets of content-addressed chunks. Peers help distribute load by serving and storing data, while a central coordinator helps with reliability and indexing.
-
-Built for:
-- ⚡ Fast, distributed delivery
-- 🛡️ Resilience via chunk replication
-- ♻️ Deduplication by design
