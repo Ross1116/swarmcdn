@@ -1,71 +1,137 @@
 # SwarmCDN
 
-SwarmCDN is a lightweight peer-to-peer content delivery network written in Go. It enables distributed file storage and retrieval across registered peers with chunk-level deduplication, replication, and manifest-based versioning.
+SwarmCDN is a lightweight peer-to-peer content delivery network (CDN) written in Go. It enables distributed file storage, chunk-level deduplication, and versioned retrieval across registered peers.
 
-## Features
+---
 
-- **Chunk-Based Storage:** Files are split into 512KB chunks, hashed via SHA256 for content-addressed storage.
-- **Manifest-Based Versioning:** Every upload generates a manifest under `manifests/<username>/<filename>/vN.json`.
-- **Peer Replication:** Chunks are uploaded to multiple healthy peers. The tracker maintains who holds what.
-- **P2P CLI Peer Client:** Users can upload, download, reconstruct files, and serve chunks via a peer HTTP server.
-- **Health Monitoring:** Dead peers are periodically detected and removed from the network automatically.
-- **Central Coordinator (Server):** Handles uploads, manifest tracking, peer management, and redistribution.
+## 🚀 Features
 
-## Folder Structure
+- **Chunk-Based Storage:** Files are split into 512KB SHA256-addressed chunks.
+- **Versioned Manifests:** Each upload creates a manifest at `storage/manifests/<username>/<filename>/vN.json`.
+- **Peer Replication:** Chunks are replicated to multiple healthy peers, tracked via `storage/trackers/<chunk_hash>.json`.
+- **Global File Index:** `index.json` maintains metadata for all uploads: user, filename, versions, timestamps.
+- **Integrity + Deduplication:** Chunks are not re-uploaded if they already exist; all chunks are hash-verified.
+- **CLI Peer Client:** Lightweight CLI for upload, download, chunk serving, and file reconstruction.
+- **Health Monitoring:** Automatically removes unreachable peers from the registry.
+- **Parallel Downloads:** Chunk downloads happen concurrently with retries for robustness.
+- **Planned: Per-User Indexing:** Enables user-specific file listings, exports, and auditability.
 
-    .
-    ├── storage/
-    │   ├── manifests/         # Versioned manifests: /username/filename/vN.json
-    │   ├── chunks/            # Server-side backup of chunk blobs
-    │   ├── trackers/          # tracker/<chunk_hash>.json (replication map)
-    │   ├── index.json         # File index for easy lookup
-    │   └── peers.json         # Peer registry
-    ├── peer/
-    │   ├── client/            # CLI + embedded HTTP server
-    │   └── server/            # HTTP chunk receiver
-    ├── utils/                 # Tracker logic, health checks, peer mgmt
-    └── example_files/         # Demo files for upload
+---
 
-## Server (Control Plane)
+## 🗂️ Folder Structure
 
-    go run main.go
+```
 
-Handles:
+.
+├── storage/
+│   ├── chunks/               # Server-side backup of chunk blobs
+│   ├── manifests/            # Versioned manifests per user and file
+│   ├── trackers/             # Chunk replication map
+│   ├── index.json            # Global file metadata index
+│   └── peers.json            # Peer registry
+│
+├── peer/
+│   ├── client/               # CLI + embedded HTTP server
+│   └── server/               # Peer-side chunk receiver
+│
+├── utils/                    # Manifest/index helpers, health checks
+└── example\_files/            # Sample files for testing
 
-- Chunking + deduplication
-- Manifest generation and indexing
-- Peer registration
-- Upload redistribution
-- Peer health monitoring
+````
 
-## Peer Client
+---
 
-    make run-client
+## 📄 Manifest Format
 
-Capabilities:
+Each manifest captures a full version of a file upload.
 
-- Upload from local file system
-- Automatically splits, hashes, and sends chunks
-- Fetches manifest and downloads missing chunks
-- Runs an HTTP server for sharing chunks
-- Deduplicates chunks already present
+```json
+{
+  "file_id": "uuid-hash",
+  "filename": "example.txt",
+  "version": 2,
+  "chunks": [
+    "sha256-hash-1",
+    "sha256-hash-2"
+  ],
+  "uploaded_at": "2025-06-28T12:17:32+05:30"
+}
+````
 
-## Manifest Format
+---
 
-    {
-      "file_id": "uuid",
-      "filename": "example.txt",
-      "version": 2,
-      "chunks": ["<sha256-1>", "<sha256-2>", "..."],
-      "uploaded_at": "2025-06-27T14:05:10+05:30"
-    }
+## 🗃️ File Index (`index.json`)
 
-## Roadmap
+`index.json` tracks file metadata for all uploads.
 
-- [ ] Index manifest entries per user (for file listing/history)
-- [ ] Optimize chunk downloads with retries + goroutines
-- [ ] Add peer auth/token for uploads
-- [ ] Enable streamable playback (MP4 chunks)
-- [ ] Static file serving support (e.g., React apps)
-- [ ] Add a web dashboard
-- [ ] Add in-browser (WASM) peer support
+```json
+[
+  {
+    "file_id": "sha256(username/filename)",
+    "username": "ross",
+    "filename": "example.txt",
+    "latest_ver": 2,
+    "all_versions": [1, 2],
+    "uploaded_at": "2025-06-28T12:17:32+05:30",
+    "tags": []
+  }
+]
+```
+
+Planned: `manifests/<username>/index.json` for faster per-user queries.
+
+---
+
+## 🧪 Running the Server
+
+```bash
+go run main.go
+```
+
+Responsible for:
+
+* File chunking and deduplication
+* Manifest and index management
+* Peer registration and health monitoring
+* Chunk redistribution
+
+---
+
+## 🧑‍🤝‍🧑 Running the Peer Client
+
+```bash
+make run-client
+```
+
+Provides:
+
+* File upload with automatic chunking
+* Manifest fetching and reconstruction
+* Embedded HTTP server to serve chunks
+* Deduplication for existing chunks
+
+---
+
+## 🔄 Upload + Download Flow
+
+1. Upload → server chunks and hashes the file.
+2. Manifest saved under user/filename/version.
+3. Chunks are distributed to registered peers.
+4. Index updated for metadata tracking.
+5. Download reconstructs file using manifest + peer chunks (with hash validation).
+
+---
+
+## 🛣️ Roadmap
+
+* [x] Manifest versioning
+* [x] Global file metadata index
+* [x] Peer-based chunk deduplication
+* [x] Parallel downloads with retries
+* [ ] Per-user index: `manifests/<username>/index.json`
+* [ ] CLI: List/download file history
+* [ ] Peer authentication/token support
+* [ ] Static file + React app serving
+* [ ] Streaming playback (e.g. MP4)
+* [ ] Web dashboard
+* [ ] WASM-based browser peers
