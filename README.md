@@ -1,82 +1,80 @@
 # SwarmCDN
 
-SwarmCDN is a lightweight peer-to-peer content delivery network designed to enable distributed file uploads and downloads across multiple nodes. Built in Go, it supports chunked uploads, manifest tracking, peer registration, and fault-tolerant retrieval.
+SwarmCDN is a lightweight peer-to-peer content delivery network written in Go. It enables distributed file storage and retrieval across registered peers with chunk-level deduplication, replication, and manifest-based versioning.
 
 ## Features
 
-- 🔹 Chunk-based file upload and download
-- 🔹 Manifest-based file versioning and integrity
-- 🔹 Peer-to-peer chunk sharing across registered clients
-- 🔹 Periodic peer health checks and auto-removal of dead nodes
-- 🔹 Redistributed chunk uploading to multiple peers for balance
-- 🔹 SHA-256 chunk validation to ensure data integrity
+- **Chunk-Based Storage:** Files are split into 512KB chunks, hashed via SHA256 for content-addressed storage.
+- **Manifest-Based Versioning:** Every upload generates a manifest under `manifests/<username>/<filename>/vN.json`.
+- **Peer Replication:** Chunks are uploaded to multiple healthy peers. The tracker maintains who holds what.
+- **P2P CLI Peer Client:** Users can upload, download, reconstruct files, and serve chunks via a peer HTTP server.
+- **Health Monitoring:** Dead peers are periodically detected and removed from the network automatically.
+- **Central Coordinator (Server):** Handles uploads, manifest tracking, peer management, and redistribution.
 
-## Usage
+## 📂 Folder Structure
 
-### Peer Client
+    .
+    ├── storage/
+    │   ├── manifests/         # Versioned manifests: /username/filename/vN.json
+    │   ├── chunks/            # Server-side backup of chunk blobs
+    │   ├── trackers/          # tracker/<chunk_hash>.json (replication map)
+    │   ├── index.json         # File index for easy lookup
+    │   └── peers.json         # Peer registry
+    ├── peer/
+    │   ├── client/            # CLI + embedded HTTP server
+    │   └── server/            # HTTP chunk receiver
+    ├── utils/                 # Tracker logic, health checks, peer mgmt
+    └── example_files/         # Demo files for upload
 
-```bash
-make run-client
-```
+## 🔧 Server (Control Plane)
 
-Features:
-- Upload files from `example_files/`
-- Download files by File ID
-- Auto-registers with main server
-- Starts a chunk server (default port: 9000/9001)
-- Chunks stored in `peer/client/chunks/`
-- Downloads reconstructed to `peer/client/downloads/`
-
-### Server (Control Plane)
+    go run main.go
 
 Handles:
-- File uploads + chunking
-- Manifest generation and storage
-- Peer registration (`peers.json`)
-- Redistributing chunks to multiple peers
 
-### Health Monitoring
+- Chunking + deduplication
+- Manifest generation and indexing
+- Peer registration
+- Upload redistribution
+- Peer health monitoring
 
-- Periodically checks each peer via `/health`
-- Automatically deletes unresponsive peers from `peers.json`
+## 💻 Peer Client
 
-## Manifest Format
+    make run-client
 
-Each uploaded file generates a manifest:
+Capabilities:
 
-```json
-{
-  "file_id": "uuid",
-  "filename": "example.txt",
-  "version": 1,
-  "chunks": ["<hash1>", "<hash2>", ...],
-  "uploaded_at": "2025-06-27T14:05:10+05:30"
-}
-```
+- Upload from local file system
+- Automatically splits, hashes, and sends chunks
+- Fetches manifest and downloads missing chunks
+- Runs an HTTP server for sharing chunks
+- Deduplicates chunks already present
 
-Future: Versioning will be updated on overwrite (e.g. `v2.json`). Chunk ownership tracking will be offloaded to `tracker.json`.
+## 🧾 Manifest Format
 
-## Folder Structure
+    {
+      "file_id": "uuid",
+      "filename": "example.txt",
+      "version": 2,
+      "chunks": ["<sha256-1>", "<sha256-2>", "..."],
+      "uploaded_at": "2025-06-27T14:05:10+05:30"
+    }
 
-```
-.
-├── storage/
-│   ├── manifests/         # Stores manifest JSONs
-│   └── chunks/            # Main server backup chunk storage
-├── peer/
-│   ├── client/            # CLI + chunk server
-│   └── server/            # UploadChunkHandler, etc.
-├── utils/                 # Peer management, health checks
-└── example_files/         # Test upload files
-```
+## 🛣 Roadmap
 
-## Future Work
+- [ ] Index manifest entries per user (for file listing/history)
+- [ ] Optimize chunk downloads with retries + goroutines
+- [ ] Add peer auth/token for uploads
+- [ ] Enable streamable playback (MP4 chunks)
+- [ ] Static file serving support (e.g., React apps)
+- [ ] Add a web dashboard
+- [ ] Add in-browser (WASM) peer support
 
-- [ ] Chunk replication and tracker.json per chunk
-- [ ] Peer authentication
-- [ ] Streamable video playback
-- [ ] React/HTML page serving via CDN
-- [ ] Dashboard for peer monitoring
-- [ ] WASM/browser-based peers
+## 🧠 Philosophy
 
----
+SwarmCDN treats files as versioned sets of content-addressed chunks. Peers help distribute load by serving and storing data, while a central coordinator helps with reliability and indexing.
+
+Built for:
+- ⚡ Fast, distributed delivery
+- 🛡️ Resilience via chunk replication
+- ♻️ Deduplication by design
