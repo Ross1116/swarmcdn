@@ -12,16 +12,24 @@ import (
 )
 
 func fetchManifest(reader *bufio.Reader) error {
-	fmt.Println("Enter File ID:")
-	fileID, err := reader.ReadString('\n')
+	fmt.Println("Enter username:")
+	username, err := reader.ReadString('\n')
 	if err != nil {
 		log.Println("Error reading input:", err)
 		return err
 	}
-	fileID = strings.TrimSpace(fileID)
+	username = strings.TrimSpace(username)
 
-	manifestFilePath := GetManifestPath(fileID)
-	url := fmt.Sprintf("%s/manifest/%s", serverURL, fileID)
+	fmt.Println("Enter filename:")
+	filename, err := reader.ReadString('\n')
+	if err != nil {
+		log.Println("Error reading input:", err)
+		return err
+	}
+	filename = strings.TrimSpace(filename)
+
+	manifestFilePath := GetManifestPath(filename)
+	url := fmt.Sprintf("%s/manifest/%s/%s", serverURL, username, filename)
 
 	resp, err := http.Get(url)
 	if err != nil {

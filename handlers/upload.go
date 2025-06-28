@@ -15,6 +15,12 @@ import (
 
 func UploadHandler(app *utils.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		username := c.PostForm("username")
+		if username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+			return
+		}
+
 		file, err := c.FormFile("file")
 		if err != nil {
 			log.Println("Failed to get form file:", err)
@@ -46,9 +52,16 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 				seen[chunk.SHA256Hash] = true
 			}
 		}
+		basePath := filepath.Join(utils.ManifestsDir, username, file.Filename)
+
+		version, err := utils.GetNextManifestVersion(username, file.Filename)
+		if err != nil {
+			log.Println("Failed to determine manifest version:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Version resolution failed"})
+			return
+		}
 
 		fileID := uuid.New().String()
-		version := 1
 		manifest := utils.Manifest{
 			FileID:     fileID,
 			Version:    version,
@@ -57,7 +70,7 @@ func UploadHandler(app *utils.App) gin.HandlerFunc {
 			UploadedAt: time.Now(),
 		}
 
-		manifestPath := utils.GetManifestPath(fileID, version)
+		manifestPath := filepath.Join(basePath, fmt.Sprintf("v%d.json", version))
 		if err := os.MkdirAll(filepath.Dir(manifestPath), os.ModePerm); err != nil {
 			log.Println("Failed to create manifest directory:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to prepare manifest directory"})

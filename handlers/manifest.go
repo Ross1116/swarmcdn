@@ -9,29 +9,22 @@ import (
 )
 
 func GetLatestManifestHandler(c *gin.Context) {
-	fileID := c.Param("fileID")
+	username := c.Param("username")
+	filename := c.Param("filename")
 
-	indexPath := utils.GetIndexFilePath()
-	index, err := utils.LoadIndex(indexPath)
+	version, err := utils.GetNextManifestVersion(username, filename)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read index"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to resolve version"})
 		return
 	}
 
-	var foundIndex *utils.FileIndex
-	for _, entry := range index {
-		if entry.FileID == fileID {
-			foundIndex = &entry
-			break
-		}
-	}
-
-	if foundIndex == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "File ID not found in index"})
+	latestVersion := version - 1
+	if latestVersion <= 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No versions found for file"})
 		return
 	}
 
-	manifestPath := utils.GetManifestPath(fileID, foundIndex.LatestVersion)
+	manifestPath := utils.GetManifestPath(username, filename, latestVersion)
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Manifest file not found"})
 		return

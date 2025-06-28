@@ -13,6 +13,13 @@ import (
 )
 
 func uploadFile(reader *bufio.Reader) error {
+	fmt.Print("Enter username: ")
+	usernameInput, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read username: %v", err)
+	}
+	username := strings.TrimSpace(usernameInput)
+
 	fmt.Print("Enter file path to upload: ")
 	pathInput, err := reader.ReadString('\n')
 	if err != nil {
@@ -37,6 +44,10 @@ func uploadFile(reader *bufio.Reader) error {
 	_, err = io.Copy(part, file)
 	if err != nil {
 		return fmt.Errorf("failed to copy file data: %v", err)
+	}
+
+	if err := writer.WriteField("username", username); err != nil {
+		return fmt.Errorf("failed to write username field: %v", err)
 	}
 
 	err = writer.Close()

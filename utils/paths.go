@@ -15,8 +15,12 @@ const (
 	peersFile    = StorageDir + "/peers.json"
 )
 
-func GetManifestPath(fileID string, version int) string {
-	return filepath.Join(ManifestsDir, fileID, fmt.Sprintf("v%d.json", version))
+// func GetManifestPath(fileID string, version int) string {
+// 	return filepath.Join(ManifestsDir, fileID, fmt.Sprintf("v%d.json", version))
+// }
+
+func GetManifestPath(username, filename string, version int) string {
+	return filepath.Join(ManifestsDir, username, filename, fmt.Sprintf("v%d.json", version))
 }
 
 func GetChunkPath(hash string) string {

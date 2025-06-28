@@ -17,7 +17,7 @@ func main() {
 	router := gin.Default()
 	router.POST("/upload", handlers.UploadHandler(app))
 	router.GET("/chunks/:hash", handlers.GetChunkHandler)
-	router.GET("/manifest/:fileID", handlers.GetLatestManifestHandler)
+	router.GET("/manifest/:username/:filename", handlers.GetLatestManifestHandler)
 
 	router.GET("/peers", handlers.GetKnownPeers)
 	router.POST("/peers/register", handlers.AddKnownPeer)
