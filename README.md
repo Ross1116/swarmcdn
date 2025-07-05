@@ -35,7 +35,7 @@ SwarmCDN is a lightweight peer-to-peer content delivery network (CDN) written in
 │   └── server/               # Peer-side chunk receiver
 │
 ├── utils/                    # Manifest/index helpers, health checks
-└── example\_files/            # Sample files for testing
+└── example_files/            # Sample files for testing
 
 ````
 
